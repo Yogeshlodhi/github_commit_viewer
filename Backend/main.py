@@ -4,7 +4,6 @@ from auth import router as auth_router
 
 app = FastAPI()
 
-# Allow frontend dev server
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=["http://localhost:5173"],
