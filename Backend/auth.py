@@ -14,6 +14,7 @@ CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 @router.get("/login")
 def github_login():
     redirect_uri = "http://localhost:8000/auth/callback"
+    # redirect_uri = "https://github-commit-viewer.onrender.com/auth/callback"
     github_oauth_url = (
         f"https://github.com/login/oauth/authorize"
         f"?client_id={CLIENT_ID}&redirect_uri={redirect_uri}&scope=repo"
@@ -36,7 +37,7 @@ async def github_callback(code: str):
         access_token = token_json.get("access_token")
 
     if access_token:
-        # ✅ Redirect to React frontend with token in query params
+        # Redirect to React frontend with token in query params
         return RedirectResponse(f"http://localhost:5173?token={access_token}")
     return {"error": "Authentication failed"}
 

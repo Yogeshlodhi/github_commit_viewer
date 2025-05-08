@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { getToken, removeToken } from "../utils/auth";
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
 interface Commit {
   commit: {
     message: string;
@@ -61,6 +63,7 @@ const Dashboard = () => {
   const fetchUserInfo = async () => {
     try {
       const res = await axios.get("http://localhost:8000/auth/user", {
+      // const res = await axios.get(`${apiUrl}/auth/user`, {
         params: { token },
       });
       setUserInfo(res.data);
@@ -74,6 +77,7 @@ const Dashboard = () => {
     setError(null);
     try {
       const res = await axios.get<PaginatedResponse>("http://localhost:8000/auth/repos", {
+      // const res = await axios.get<PaginatedResponse>(`${apiUrl}/auth/repos`, {
         params: { 
           token,
           page,
@@ -108,6 +112,7 @@ const Dashboard = () => {
   const fetchCommits = async (repo: Repo) => {
     setLoadingCommits((prev) => ({ ...prev, [repo.id]: true }));
     try {
+      // const commitsRes = await axios.get(`${apiUrl}/auth/commits`, {
       const commitsRes = await axios.get("http://localhost:8000/auth/commits", {
         params: { token, owner: repo.owner.login, repo: repo.name },
       });

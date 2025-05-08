@@ -10,6 +10,7 @@ export default defineConfig({
     proxy: {
       '/auth': {
         target: 'http://localhost:8000',
+        // target: 'https://github-commit-viewer.onrender.com',
         changeOrigin: true,
         secure: false,
       }

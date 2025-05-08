@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { setToken, isAuthenticated } from "../utils/auth";
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
 const Login = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -16,6 +18,8 @@ const Login = () => {
 
   const handleLogin = () => {
     window.location.href = "http://localhost:8000/auth/login";
+    // window.location.href = `${apiUrl}/auth/login`;
+    console.log("API : ",apiUrl)
   };
 
   return (
