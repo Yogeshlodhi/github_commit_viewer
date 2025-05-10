@@ -19,7 +19,7 @@ const Login = () => {
   const handleLogin = () => {
     window.location.href = "http://localhost:8000/auth/login";
     // window.location.href = `${apiUrl}/auth/login`;
-    console.log("API : ",apiUrl)
+    // console.log("API : ",apiUrl)
   };
 
   return (

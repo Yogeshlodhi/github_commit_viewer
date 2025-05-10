@@ -24,6 +24,13 @@ interface Repo {
   };
 }
 
+interface Branch {
+  name: string;
+  commit: {
+    sha: string;
+  };
+}
+
 interface UserInfo {
   login: string;
   avatar_url: string;
@@ -46,9 +53,12 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [repos, setRepos] = useState<Repo[]>([]);
   const [commits, setCommits] = useState<Record<string, Commit[]>>({});
+  const [branches, setBranches] = useState<Record<string, Branch[]>>({});
+  const [selectedBranches, setSelectedBranches] = useState<Record<string, string>>({});
   const [expandedRepos, setExpandedRepos] = useState<Record<number, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [loadingCommits, setLoadingCommits] = useState<Record<number, boolean>>({});
+  const [loadingBranches, setLoadingBranches] = useState<Record<number, boolean>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [repoStats, setRepoStats] = useState({ total: 0, public: 0, private: 0 });
@@ -109,30 +119,66 @@ const Dashboard = () => {
     }
   }, [currentPage, token]);
 
+  const fetchBranches = async (repo: Repo) => {
+    setLoadingBranches((prev) => ({ ...prev, [repo.id]: true }));
+    try {
+      const branchesRes = await axios.get("http://localhost:8000/auth/branches", {
+        params: { token, owner: repo.owner.login, repo: repo.name },
+      });
+      setBranches((prev) => ({ ...prev, [repo.name]: branchesRes.data }));
+      // Set default branch to main or master if available
+      const defaultBranch = branchesRes.data.find((b: Branch) => b.name === 'main' || b.name === 'master')?.name || branchesRes.data[0]?.name;
+      if (defaultBranch) {
+        setSelectedBranches((prev) => ({ ...prev, [repo.name]: defaultBranch }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch branches:", err);
+    } finally {
+      setLoadingBranches((prev) => ({ ...prev, [repo.id]: false }));
+    }
+  };
+
   const fetchCommits = async (repo: Repo) => {
     setLoadingCommits((prev) => ({ ...prev, [repo.id]: true }));
     try {
-      // const commitsRes = await axios.get(`${apiUrl}/auth/commits`, {
+      const selectedBranch = selectedBranches[repo.name] || 'main';
       const commitsRes = await axios.get("http://localhost:8000/auth/commits", {
-        params: { token, owner: repo.owner.login, repo: repo.name },
+        params: { 
+          token, 
+          owner: repo.owner.login, 
+          repo: repo.name,
+          branch: selectedBranch 
+        },
       });
-      setCommits((prev) => ({ ...prev, [repo.name]: commitsRes.data }));
+      // Ensure commits is always an array
+      const commitsData = Array.isArray(commitsRes.data) ? commitsRes.data : [];
+      setCommits((prev) => ({ ...prev, [repo.name]: commitsData }));
     } catch (err) {
       console.error("Failed to fetch commits:", err);
+      setCommits((prev) => ({ ...prev, [repo.name]: [] }));
     } finally {
       setLoadingCommits((prev) => ({ ...prev, [repo.id]: false }));
     }
   };
 
   const toggleExpand = (repo: Repo) => {
-    if (!expandedRepos[repo.id] && !commits[repo.name]) {
-      fetchCommits(repo);
+    if (!expandedRepos[repo.id]) {
+      if (!branches[repo.name]) {
+        fetchBranches(repo);
+      }
+      if (!commits[repo.name]) {
+        fetchCommits(repo);
+      }
     }
-    // Only toggle the clicked repository
     setExpandedRepos((prev) => ({
       ...prev,
       [repo.id]: !prev[repo.id]
     }));
+  };
+
+  const handleBranchChange = (repo: Repo, branchName: string) => {
+    setSelectedBranches((prev) => ({ ...prev, [repo.name]: branchName }));
+    fetchCommits(repo);
   };
 
   const handlePageChange = (pageNumber: number) => {
@@ -233,12 +279,35 @@ const Dashboard = () => {
                           {repo.private ? 'Private' : 'Public'}
                         </span>
                       </div>
-                      <button
-                        onClick={() => toggleExpand(repo)}
-                        className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                      >
-                        {expandedRepos[repo.id] ? 'Hide Commits' : 'Show Commits'}
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        {expandedRepos[repo.id] && (
+                          <>
+                            {loadingBranches[repo.id] ? (
+                              <div className="w-32 h-10 flex items-center justify-center">
+                                <div className="inline-block animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+                              </div>
+                            ) : branches[repo.name] && (
+                              <select
+                                value={selectedBranches[repo.name] || ''}
+                                onChange={(e) => handleBranchChange(repo, e.target.value)}
+                                className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                              >
+                                {branches[repo.name].map((branch) => (
+                                  <option key={branch.name} value={branch.name}>
+                                    {branch.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </>
+                        )}
+                        <button
+                          onClick={() => toggleExpand(repo)}
+                          className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                        >
+                          {expandedRepos[repo.id] ? 'Hide Commits' : 'Show Commits'}
+                        </button>
+                      </div>
                     </div>
                     
                     {expandedRepos[repo.id] && (
@@ -250,7 +319,7 @@ const Dashboard = () => {
                           </div>
                         ) : (
                           <div className="space-y-3 max-h-64 overflow-y-auto">
-                            {(commits[repo.name] || []).map((commit, index) => (
+                            {Array.isArray(commits[repo.name]) && commits[repo.name].map((commit, index) => (
                               <div key={index} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                                 <p className="font-medium text-gray-900 mb-1">{commit.commit.message}</p>
                                 <div className="flex items-center text-sm text-gray-600">
