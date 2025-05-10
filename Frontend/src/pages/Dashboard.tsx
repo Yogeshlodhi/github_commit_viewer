@@ -31,13 +31,13 @@ interface Branch {
   };
 }
 
-interface UserInfo {
-  login: string;
-  avatar_url: string;
-  name: string;
-  bio: string;
-  html_url: string;
-}
+// interface UserInfo {
+//   login: string;
+//   avatar_url: string;
+//   name: string;
+//   bio: string;
+//   html_url: string;
+// }
 
 interface PaginatedResponse {
   repos: Repo[];
@@ -63,31 +63,30 @@ const Dashboard = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [repoStats, setRepoStats] = useState({ total: 0, public: 0, private: 0 });
   const [error, setError] = useState<string | null>(null);
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  // const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   const logout = () => {
     removeToken();
     navigate("/");
   };
+  
 
-  const fetchUserInfo = async () => {
-    try {
-      const res = await axios.get("http://localhost:8000/auth/user", {
-      // const res = await axios.get(`${apiUrl}/auth/user`, {
-        params: { token },
-      });
-      setUserInfo(res.data);
-    } catch (err) {
-      console.error("Failed to fetch user info:", err);
-    }
-  };
+  // const fetchUserInfo = async () => {
+  //   try {
+  //     const res = await axios.get("http://localhost:8000/auth/user", {
+  //       params: { token },
+  //     });
+  //     setUserInfo(res.data);
+  //   } catch (err) {
+  //     console.error("Failed to fetch user info:", err);
+  //   }
+  // };
 
   const fetchRepos = async (page: number) => {
     setLoading(true);
     setError(null);
     try {
       const res = await axios.get<PaginatedResponse>("http://localhost:8000/auth/repos", {
-      // const res = await axios.get<PaginatedResponse>(`${apiUrl}/auth/repos`, {
         params: { 
           token,
           page,
@@ -112,7 +111,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (token) {
-      fetchUserInfo();
+      // fetchUserInfo();
       fetchRepos(currentPage);
     } else {
       navigate("/");
@@ -204,7 +203,7 @@ const Dashboard = () => {
 
       <div className="container mx-auto p-6">
         {/* User Profile Section */}
-        {userInfo && (
+        {/* {userInfo && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <div className="flex items-start space-x-6">
               <img 
@@ -229,7 +228,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Repository Statistics */}
         <div className="grid grid-cols-3 gap-4 mb-8">
