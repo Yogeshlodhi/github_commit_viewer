@@ -18,7 +18,6 @@ APP_ID = os.getenv("GITHUB_APP_ID")
 FRONTEND_URL = "http://localhost:5173"
 APP_NAME = "git-commit-viewer"  # GitHub App name
 
-
 def generate_jwt():
     payload = {
         "iat": int(time.time()) - 60,
@@ -26,7 +25,6 @@ def generate_jwt():
         "iss": APP_ID
     }
     return jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
-
 
 async def get_installation_token(installation_id: int):
     jwt_token = generate_jwt()
@@ -44,10 +42,8 @@ async def get_installation_token(installation_id: int):
     else:
         raise Exception(f"GitHub error {response.status_code}: {response.text}")
 
-
 # Temporary in-memory store, use Redis/DB in production
 user_tokens = {}
-
 
 @router.get("/login")
 async def github_login():
@@ -68,10 +64,10 @@ async def github_login():
     # Redirect the user to GitHub OAuth
     return RedirectResponse(oauth_url)
 
-
 @router.get("/callback")
 async def github_callback(code: str = "", state: str = ""):
     try:
+        # Exchange the code for an access token using OAuth
         async with httpx.AsyncClient() as client:
             token_resp = await client.post(
                 "https://github.com/login/oauth/access_token",
@@ -82,7 +78,10 @@ async def github_callback(code: str = "", state: str = ""):
                     "code": code
                 }
             )
+        
+        # Check if we successfully received an access token
         token_data = token_resp.json()
+        print("Token Response:", token_data)  # Add this
         user_token = token_data.get("access_token")
         if not user_token:
             raise Exception("Could not fetch user access token")
