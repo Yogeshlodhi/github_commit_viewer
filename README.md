@@ -7,6 +7,12 @@ This project allows users to log in via GitHub, fetch their repositories, and di
 - Fetch and display user-owned repositories
 - View commit history for each repository
 
+
+## Branches:
+   - Main Branch => Uses the OAuth
+   - Github-App => Uses the Github Apps approach
+   - combined => Uses the combined approach
+
 ## Prerequisites:
 - Python 3.8+
 - Node.js 14+
