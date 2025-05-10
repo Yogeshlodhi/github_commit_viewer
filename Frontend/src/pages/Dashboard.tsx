@@ -124,6 +124,7 @@ const Dashboard = () => {
       const branchesRes = await axios.get("http://localhost:8000/auth/branches", {
         params: { token, owner: repo.owner.login, repo: repo.name },
       });
+      console.log(branchesRes)
       setBranches((prev) => ({ ...prev, [repo.name]: branchesRes.data }));
       // Set default branch to main or master if available
       const defaultBranch = branchesRes.data.find((b: Branch) => b.name === 'main' || b.name === 'master')?.name || branchesRes.data[0]?.name;
@@ -137,28 +138,53 @@ const Dashboard = () => {
     }
   };
 
-  const fetchCommits = async (repo: Repo) => {
-    setLoadingCommits((prev) => ({ ...prev, [repo.id]: true }));
-    try {
-      const selectedBranch = selectedBranches[repo.name] || 'main';
-      const commitsRes = await axios.get("http://localhost:8000/auth/commits", {
-        params: { 
-          token, 
-          owner: repo.owner.login, 
-          repo: repo.name,
-          branch: selectedBranch 
-        },
-      });
-      // Ensure commits is always an array
-      const commitsData = Array.isArray(commitsRes.data) ? commitsRes.data : [];
-      setCommits((prev) => ({ ...prev, [repo.name]: commitsData }));
-    } catch (err) {
-      console.error("Failed to fetch commits:", err);
-      setCommits((prev) => ({ ...prev, [repo.name]: [] }));
-    } finally {
-      setLoadingCommits((prev) => ({ ...prev, [repo.id]: false }));
-    }
-  };
+  // const fetchCommits = async (repo: Repo) => {
+    // setLoadingCommits((prev) => ({ ...prev, [repo.id]: true }));
+    // try {
+    //   const selectedBranch = selectedBranches[repo.name] || 'main';
+    //   console.log("Selected Branch : ",selectedBranch)
+    //   const commitsRes = await axios.get("http://localhost:8000/auth/commits", {
+    //     params: { 
+    //       token, 
+    //       owner: repo.owner.login, 
+    //       repo: repo.name,
+    //       branch: selectedBranch 
+    //     },
+    //   });
+    //   // Ensure commits is always an array
+    //   const commitsData = Array.isArray(commitsRes.data) ? commitsRes.data : [];
+    //   setCommits((prev) => ({ ...prev, [repo.name]: commitsData }));
+    // } catch (err) {
+    //   console.error("Failed to fetch commits:", err);
+    //   setCommits((prev) => ({ ...prev, [repo.name]: [] }));
+    // } finally {
+    //   setLoadingCommits((prev) => ({ ...prev, [repo.id]: false }));
+    // }
+  // };
+
+  const fetchCommits = async (repo: Repo, branchOverride?: string) => {
+  setLoadingCommits((prev) => ({ ...prev, [repo.id]: true }));
+  try {
+    const selectedBranch = branchOverride || selectedBranches[repo.name] || 'main';
+    console.log("Selected Branch : ", selectedBranch);
+    const commitsRes = await axios.get("http://localhost:8000/auth/commits", {
+      params: { 
+        token, 
+        owner: repo.owner.login, 
+        repo: repo.name,
+        branch: selectedBranch 
+      },
+    });
+    const commitsData = Array.isArray(commitsRes.data) ? commitsRes.data : [];
+    setCommits((prev) => ({ ...prev, [repo.name]: commitsData }));
+  } catch (err) {
+    console.error("Failed to fetch commits:", err);
+    setCommits((prev) => ({ ...prev, [repo.name]: [] }));
+  } finally {
+    setLoadingCommits((prev) => ({ ...prev, [repo.id]: false }));
+  }
+};
+
 
   const toggleExpand = (repo: Repo) => {
     if (!expandedRepos[repo.id]) {
@@ -176,8 +202,10 @@ const Dashboard = () => {
   };
 
   const handleBranchChange = (repo: Repo, branchName: string) => {
+    console.log("Branch : ", branchName)
     setSelectedBranches((prev) => ({ ...prev, [repo.name]: branchName }));
-    fetchCommits(repo);
+    // fetchCommits(repo);
+    fetchCommits(repo, branchName); 
   };
 
   const handlePageChange = (pageNumber: number) => {
